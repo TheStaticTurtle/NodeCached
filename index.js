@@ -2,6 +2,8 @@ const express = require('express')
 const md5     = require("md5");
 const fs      = require('fs')
 const axios   = require('axios');
+const getSize = require('get-folder-size');
+const path    = require('path');
 const config  = require("./config.json");
 
 const app = express()
@@ -24,7 +26,31 @@ function deleteCachedFile() {
     }
 }
 
+function clearFolder(folder) {
+    fs.readdir(folder, (err, files) => {
+        if (err) throw err;
+
+        for (const file of files) {
+            fs.unlink(path.join(folder, file), err => {
+                if (err) throw err;
+            });
+        }
+    });
+}
+function checkCacheFolderSize() {
+    getSize("cache", (err, size) => {
+        if (err) { throw err; }
+
+        size = (size / 1024 / 1024).toFixed(2)
+        if( size > config.caching.max_cache_size) {
+            console.warn(`Cache folder is overflowing by ${size-config.caching.max_cache_size} MB`)
+            clearFolder("cache")
+        }
+    });
+}
+
 setInterval(deleteCachedFile,1000)
+setInterval(checkCacheFolderSize,10000)
 
 app.all('/*', (req, res) => {
     let url  = req.originalUrl[0] === "/" ? req.originalUrl.substr(1) : req.originalUrl
@@ -48,13 +74,25 @@ app.all('/*', (req, res) => {
                 if(response.status !== 200) {
                     res.sendStatus(404)
                 } else {
-                    response.data.pipe(fs.createWriteStream(file_cahced_path));
+                    strm = fs.createWriteStream(file_cahced_path)
+                    response.data.pipe(strm);
                     response.data.pipe(res);
 
                     cachedFiles[hash+"."+file_ext] = new Date().getTime() + config.caching.cache_time * 1000
+
+                    strm.on('close', function() {
+                        getSize("cache", (err, size) => {
+                            if (err) {
+                                throw err;
+                            }
+                            size = (size / 1024 / 1024).toFixed(2)
+                            console.info(`Cache folder size is now ${size} MB`)
+                        });
+                    });
                 }
-            }
-        );
+        }).catch(why => {
+            res.sendStatus(404)
+        });
 
     }
 })
