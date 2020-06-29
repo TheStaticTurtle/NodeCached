@@ -60,27 +60,30 @@ app.all('/*', (req, res) => {
 
     let file_cahced_path = "cache/"+hash+"."+file_ext
 
-    if (cachedFiles.hasOwnProperty(hash+"."+file_ext)) {
-        console.info("Serving cached file: "+req.originalUrl+" ("+hash+"."+file_ext+")")
-        res.sendFile(__dirname + "/" + file_cahced_path)
-        cachedFiles[hash+"."+file_ext] = new Date().getTime() + config.caching.cache_time * 1000
+    if(file_ext === "") {
+        res.status(404).sendFile(__dirname + "/" + "static/403.html")
     } else {
-        console.info("Fetching file from remote server: "+config.cds.base_url+url+" ("+hash+"."+file_ext+")")
+        if (cachedFiles.hasOwnProperty(hash + "." + file_ext)) {
+            console.info("Serving cached file: " + req.originalUrl + " (" + hash + "." + file_ext + ")")
+            res.sendFile(__dirname + "/" + file_cahced_path)
+            cachedFiles[hash + "." + file_ext] = new Date().getTime() + config.caching.cache_time * 1000
+        } else {
+            console.info("Fetching file from remote server: " + config.cds.base_url + url + " (" + hash + "." + file_ext + ")")
 
-        axios({
-            url: config.cds.base_url+url,
-            responseType: 'stream',
-        }).then(response => {
-                if(response.status !== 200) {
+            axios({
+                url: config.cds.base_url + url,
+                responseType: 'stream',
+            }).then(response => {
+                if (response.status !== 200) {
                     res.status(404).sendFile(__dirname + "/" + "static/403.html")
                 } else {
                     strm = fs.createWriteStream(file_cahced_path)
                     response.data.pipe(strm);
                     response.data.pipe(res);
 
-                    cachedFiles[hash+"."+file_ext] = new Date().getTime() + config.caching.cache_time * 1000
+                    cachedFiles[hash + "." + file_ext] = new Date().getTime() + config.caching.cache_time * 1000
 
-                    strm.on('close', function() {
+                    strm.on('close', function () {
                         getSize("cache", (err, size) => {
                             if (err) {
                                 throw err;
@@ -90,10 +93,11 @@ app.all('/*', (req, res) => {
                         });
                     });
                 }
-        }).catch(why => {
-            res.status(404).sendFile(__dirname + "/" + "static/403.html")
-        });
+            }).catch(why => {
+                res.status(404).sendFile(__dirname + "/" + "static/403.html")
+            });
 
+        }
     }
 })
 

@@ -7,7 +7,7 @@
     "base_url": "https://storage.sbg.cloud.ovh.net/v1/AUTH_09eb860780a34c9b959e3eebbf15da7f/storage/"
   },
   "caching": {
-    "cache_time": 3600,
+    "cache_time": 86400,
     "max_cache_size": 2048
   }
 }
