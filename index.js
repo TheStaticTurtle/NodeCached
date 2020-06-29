@@ -72,7 +72,7 @@ app.all('/*', (req, res) => {
             responseType: 'stream',
         }).then(response => {
                 if(response.status !== 200) {
-                    res.sendStatus(404)
+                    res.status(404).sendFile(__dirname + "/" + "static/403.html")
                 } else {
                     strm = fs.createWriteStream(file_cahced_path)
                     response.data.pipe(strm);
@@ -91,7 +91,7 @@ app.all('/*', (req, res) => {
                     });
                 }
         }).catch(why => {
-            res.sendStatus(404)
+            res.status(404).sendFile(__dirname + "/" + "static/403.html")
         });
 
     }
