@@ -4,9 +4,18 @@ const fs      = require('fs')
 const axios   = require('axios');
 const getSize = require('get-folder-size');
 const path    = require('path');
-const config  = require("./config.json");
+let   config  = require("./config.json");
 
 const app = express()
+
+function check_for_env_config(c) {
+    if(process.env.cds__base_url) c.cds.base_url = process.env.cds__base_url
+    if(process.env.caching__cache_time) c.caching.cache_time = process.env.caching__cache_time
+    if(process.env.caching__max_cache_size) c.caching.cache_time = process.env.caching__max_cache_size
+    return c
+}
+
+config = check_for_env_config(config)
 
 let cachedFiles = {}
 
