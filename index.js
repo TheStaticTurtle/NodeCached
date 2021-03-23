@@ -60,6 +60,11 @@ app.all('/*', (req, res) => {
 
     let file_cahced_path = "cache/"+hash+"."+file_ext
 
+    if (!cachedFiles.hasOwnProperty(hash + "." + file_ext) && fs.existsSync(__dirname + "/" + file_cahced_path)) {
+        console.info("Serving staticaly cached file: " + req.originalUrl + " (" + hash + "." + file_ext + ")")
+        return res.status(200).sendFile(__dirname + "/" + file_cahced_path)
+    }
+
     if(file_ext === "") {
         res.status(404).sendFile(__dirname + "/" + "static/403.html")
     } else {
